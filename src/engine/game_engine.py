@@ -5,7 +5,7 @@ import esper
 import pygame
 
 from src.config.load_config import load_config
-from src.create.prefab_creator import create_enemy_spawner
+from src.create.prefab_creator import create_enemy_spawner, create_player_rect
 from src.ecs.components.c_surface import CSurface
 from src.ecs.components.c_transform import CTransform
 from src.ecs.components.c_velocity import CVelocity
@@ -17,7 +17,7 @@ from src.ecs.systems.s_screen_bounce import system_screen_bounce
 class GameEngine:
     """La clase principal del motor de juego"""
     def __init__(self) -> None:
-        (self.window, self.enemies, self.level_01) = load_config()
+        (self.window, self.enemies, self.level_01, self.player) = load_config()
 
         pygame.init()
         pygame.display.set_caption(self.window.get('title').encode("latin_1").decode("utf_8"))
@@ -40,6 +40,7 @@ class GameEngine:
         self._clean()
 
     def _create(self):
+        create_player_rect(self.ecs_world, self.player, self.level_01.get('player_spawn'))
         create_enemy_spawner(self.ecs_world, self.level_01.get('enemy_spawn_events'))
 
     def _calculate_time(self):
