@@ -5,7 +5,7 @@ import esper
 import pygame
 
 from src.config.load_config import load_config
-from src.create.prefab_creator import create_enemies
+from src.create.prefab_creator import create_enemy_spawner
 from src.ecs.components.c_surface import CSurface
 from src.ecs.components.c_transform import CTransform
 from src.ecs.components.c_velocity import CVelocity
@@ -26,7 +26,6 @@ class GameEngine:
         self.is_running = False
         self.framerate = float(self.window.get('framerate'))
         self.delta_time = 0
-        self.game_time = 0
 
         self.ecs_world = esper.World()
 
@@ -41,12 +40,11 @@ class GameEngine:
         self._clean()
 
     def _create(self):
-        create_enemies(self.ecs_world, self.enemies, self.level_01)
+        create_enemy_spawner(self.ecs_world, self.level_01.get('enemy_spawn_events'))
 
     def _calculate_time(self):
         self.clock.tick(self.framerate)
         self.delta_time = self.clock.get_time() / 1000.0
-        self.game_time += self.delta_time
 
     def _process_events(self):
         for event in pygame.event.get():
@@ -55,7 +53,7 @@ class GameEngine:
 
     def _update(self):
         system_movement(self.ecs_world, self.delta_time)
-        system_enemy_spawner(self.ecs_world, self.game_time)
+        system_enemy_spawner(self.ecs_world, self.enemies, self.delta_time)
         system_screen_bounce(self.ecs_world, self.screen)
 
     def _draw(self):
