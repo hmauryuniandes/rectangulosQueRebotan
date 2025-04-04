@@ -5,12 +5,13 @@ import esper
 import pygame
 
 from src.config.load_config import load_config
-from src.create.prefab_creator import create_enemy_spawner, create_player_rect
-from src.ecs.components.c_surface import CSurface
-from src.ecs.components.c_transform import CTransform
+from src.create.prefab_creator import create_enemy_spawner, create_input_player, create_player_rect
+from src.ecs.components.c_input_command import CInputCommand, CommandPhase
 from src.ecs.components.c_velocity import CVelocity
+from src.ecs.systems.s_collision_player_enemy import system_collision_player_enemy
 from src.ecs.systems.s_enemy_spawner import system_enemy_spawner
 from src.ecs.systems.s_movement import system_movement
+from src.ecs.systems.s_player_input import system_player_input
 from src.ecs.systems.s_rendering import system_rendering
 from src.ecs.systems.s_screen_bounce import system_screen_bounce
 
@@ -40,8 +41,10 @@ class GameEngine:
         self._clean()
 
     def _create(self):
-        create_player_rect(self.ecs_world, self.player, self.level_01.get('player_spawn'))
+        self._player_entity = create_player_rect(self.ecs_world, self.player, self.level_01.get('player_spawn'))
+        self._player_c_v = self.ecs_world.component_for_entity(self._player_entity, CVelocity)
         create_enemy_spawner(self.ecs_world, self.level_01.get('enemy_spawn_events'))
+        create_input_player(self.ecs_world)
 
     def _calculate_time(self):
         self.clock.tick(self.framerate)
@@ -49,6 +52,7 @@ class GameEngine:
 
     def _process_events(self):
         for event in pygame.event.get():
+            system_player_input(self.ecs_world, event, self._do_action)
             if event.type == pygame.QUIT:
                 self.is_running = False
 
@@ -56,6 +60,8 @@ class GameEngine:
         system_movement(self.ecs_world, self.delta_time)
         system_enemy_spawner(self.ecs_world, self.enemies, self.delta_time)
         system_screen_bounce(self.ecs_world, self.screen)
+        system_collision_player_enemy(self.ecs_world, self._player_entity, self.level_01)
+        self.ecs_world._clear_dead_entities()
 
     def _draw(self):
         self.screen.fill(
@@ -71,4 +77,27 @@ class GameEngine:
         pygame.display.flip()
 
     def _clean(self):
+        self.ecs_world.clear_database()
         pygame.quit()
+
+    def _do_action(self, c_input: CInputCommand) -> None:
+        if c_input.name == "PLAYER_LEFT":
+            if c_input.command_phase == CommandPhase.START:
+                self._player_c_v.vel.x -= self.player.get('input_velocity')
+            elif c_input.command_phase == CommandPhase.END:
+                self._player_c_v.vel.x += self.player.get('input_velocity')
+        elif c_input.name == "PLAYER_RIGHT":
+            if c_input.command_phase == CommandPhase.START:
+                self._player_c_v.vel.x += self.player.get('input_velocity')
+            elif c_input.command_phase == CommandPhase.END:
+                self._player_c_v.vel.x -= self.player.get('input_velocity')
+        elif c_input.name == "PLAYER_UP":
+            if c_input.command_phase == CommandPhase.START:
+                self._player_c_v.vel.y -= self.player.get('input_velocity')
+            elif c_input.command_phase == CommandPhase.END:
+                self._player_c_v.vel.y += self.player.get('input_velocity')
+        elif c_input.name == "PLAYER_DOWN":
+            if c_input.command_phase == CommandPhase.START:
+                self._player_c_v.vel.y += self.player.get('input_velocity')
+            elif c_input.command_phase == CommandPhase.END:
+                self._player_c_v.vel.y -= self.player.get('input_velocity')
