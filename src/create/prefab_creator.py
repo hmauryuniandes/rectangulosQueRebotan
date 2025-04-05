@@ -9,6 +9,7 @@ from src.ecs.components.c_input_command import CInputCommand
 from src.ecs.components.c_surface import CSurface
 from src.ecs.components.c_transform import CTransform
 from src.ecs.components.c_velocity import CVelocity
+from src.ecs.components.tags.c_tag_bullet import CTagBullet
 from src.ecs.components.tags.c_tag_enemy import CTagEnemy
 from src.ecs.components.tags.c_tag_player import CTagPlayer
 
@@ -66,8 +67,41 @@ def create_input_player(ecs_world: esper.World) -> None:
     input_right = ecs_world.create_entity()
     input_up = ecs_world.create_entity()
     input_down = ecs_world.create_entity()
+
+    input_a = ecs_world.create_entity()
+    input_d = ecs_world.create_entity()
+    input_w = ecs_world.create_entity()
+    input_s = ecs_world.create_entity()
+    
+    input_left_click = ecs_world.create_entity()
     
     ecs_world.add_component(input_left, CInputCommand("PLAYER_LEFT", pygame.K_LEFT))
     ecs_world.add_component(input_right, CInputCommand("PLAYER_RIGHT", pygame.K_RIGHT))
     ecs_world.add_component(input_up, CInputCommand("PLAYER_UP", pygame.K_UP))
     ecs_world.add_component(input_down, CInputCommand("PLAYER_DOWN", pygame.K_DOWN))
+
+    ecs_world.add_component(input_a, CInputCommand("PLAYER_LEFT", pygame.K_a))
+    ecs_world.add_component(input_d, CInputCommand("PLAYER_RIGHT", pygame.K_d))
+    ecs_world.add_component(input_w, CInputCommand("PLAYER_UP", pygame.K_w))
+    ecs_world.add_component(input_s, CInputCommand("PLAYER_DOWN", pygame.K_s))
+
+    ecs_world.add_component(input_left_click, CInputCommand("PLAYER_FIRE", pygame.BUTTON_LEFT))
+
+def create_bullet(ecs_world: esper.World,  player_entity: int, bullet: dict, event_pos: pygame.Vector2, max_bullets: int) -> None:
+    
+    if len(ecs_world.get_components(CTagBullet)) < max_bullets:
+        pl_t: CTransform  = ecs_world.component_for_entity(player_entity, CTransform)
+        pl_s: CSurface  = ecs_world.component_for_entity(player_entity, CSurface)
+
+        pl_rect = pl_s.surf.get_rect(topleft = pl_t.pos)
+
+        size = pygame.Vector2(bullet.get('size').get('x'), bullet.get('size').get('y'))
+        color = pygame.Color(bullet.get('color').get('r'), bullet.get('color').get('g'), bullet.get('color').get('b'))
+        pos = pygame.Vector2(pl_rect.center[0], pl_rect.center[1])
+        direction = (pygame.Vector2(event_pos) - pygame.Vector2(pl_rect.center)).normalize()
+        vel = pygame.Vector2(direction.x * bullet.get("velocity"), direction.y * bullet.get("velocity")) 
+
+        bullet_entity = create_square(ecs_world, size, pos, vel, color)
+        ecs_world.add_component(bullet_entity, CTagBullet())
+
+    

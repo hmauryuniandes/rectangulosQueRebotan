@@ -13,5 +13,8 @@ def load_config():
     with open('assets/cfg/player.json', 'r') as file:
         player = json.load(file)
 
-    return (window, enemies, level_01, player)
+    with open('assets/cfg/bullet.json', 'r') as file:
+        bullet = json.load(file)
+
+    return (window, enemies, level_01, player, bullet)
 

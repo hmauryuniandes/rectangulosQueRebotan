@@ -5,20 +5,23 @@ import esper
 import pygame
 
 from src.config.load_config import load_config
-from src.create.prefab_creator import create_enemy_spawner, create_input_player, create_player_rect
+from src.create.prefab_creator import create_bullet, create_enemy_spawner, create_input_player, create_player_rect
 from src.ecs.components.c_input_command import CInputCommand, CommandPhase
 from src.ecs.components.c_velocity import CVelocity
+from src.ecs.systems.s_bullet_limit import system_bullet_limit
+from src.ecs.systems.s_collision_bullet_enemy import system_collision_bullet_enemy
 from src.ecs.systems.s_collision_player_enemy import system_collision_player_enemy
 from src.ecs.systems.s_enemy_spawner import system_enemy_spawner
 from src.ecs.systems.s_movement import system_movement
 from src.ecs.systems.s_player_input import system_player_input
+from src.ecs.systems.s_player_limit import system_player_limit
 from src.ecs.systems.s_rendering import system_rendering
 from src.ecs.systems.s_screen_bounce import system_screen_bounce
 
 class GameEngine:
     """La clase principal del motor de juego"""
     def __init__(self) -> None:
-        (self.window, self.enemies, self.level_01, self.player) = load_config()
+        (self.window, self.enemies, self.level_01, self.player, self.bullet) = load_config()
 
         pygame.init()
         pygame.display.set_caption(self.window.get('title').encode("latin_1").decode("utf_8"))
@@ -60,7 +63,10 @@ class GameEngine:
         system_movement(self.ecs_world, self.delta_time)
         system_enemy_spawner(self.ecs_world, self.enemies, self.delta_time)
         system_screen_bounce(self.ecs_world, self.screen)
+        system_player_limit(self.ecs_world, self.screen)
+        system_bullet_limit(self.ecs_world, self.screen)
         system_collision_player_enemy(self.ecs_world, self._player_entity, self.level_01)
+        system_collision_bullet_enemy(self.ecs_world)
         self.ecs_world._clear_dead_entities()
 
     def _draw(self):
@@ -101,3 +107,14 @@ class GameEngine:
                 self._player_c_v.vel.y += self.player.get('input_velocity')
             elif c_input.command_phase == CommandPhase.END:
                 self._player_c_v.vel.y -= self.player.get('input_velocity')
+        elif c_input.name == "PLAYER_FIRE":
+            if c_input.command_phase == CommandPhase.START:
+                create_bullet(
+                    self.ecs_world,
+                    self._player_entity,
+                    self.bullet,
+                    c_input.event_pos,
+                    self.level_01.get("player_spawn").get("max_bullets")
+                )
+            elif c_input.command_phase == CommandPhase.END:
+                pass
