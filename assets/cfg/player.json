@@ -1,12 +1,15 @@
 {
-    "size": {
-        "x": 25,
-        "y": 25
+    "animation": {
+        "number_frames": 4,
+        "list": [
+            {
+                "name": "MOVE",
+                "start": 0,
+                "end": 3,
+                "framerate": 10
+            }
+        ]
     },
-    "color": {
-        "r": 200,
-        "g": 200,
-        "b": 200
-    },
+    "image": "assets/img/player.png",
     "input_velocity": 100
 }

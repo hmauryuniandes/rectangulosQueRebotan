@@ -16,10 +16,8 @@ def system_bullet_limit(world: esper.World, screen: pygame.Surface):
     c_t_p: CTagBullet
 
     for entity, (c_t, c_s, c_t_p) in components:
-        cuad_rect = c_s.surf.get_rect(topleft=c_t.pos)
+        bullet_rect = c_s.area.copy()
+        bullet_rect.topleft = c_t.pos
 
-        if cuad_rect.left < 0 or cuad_rect.right > screen_rect.width:
-            world.delete_entity(entity)
-
-        if cuad_rect.top < 0 or cuad_rect.bottom > screen_rect.height:
+        if not screen_rect.contains(bullet_rect):
             world.delete_entity(entity)

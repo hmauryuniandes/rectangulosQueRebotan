@@ -3,9 +3,9 @@ from enum import Enum
 import pygame
 
 class CInputCommand:
-    def __init__(self, name: str, key: int) -> None:
+    def __init__(self, name: str, keys: list) -> None:
         self.name = name
-        self.key = key
+        self.keys = keys
         self.command_phase = CommandPhase.NA
         self.event_pos: pygame.Vector2 = None
        

@@ -8,6 +8,7 @@ from src.config.load_config import load_config
 from src.create.prefab_creator import create_bullet, create_enemy_spawner, create_input_player, create_player_rect
 from src.ecs.components.c_input_command import CInputCommand, CommandPhase
 from src.ecs.components.c_velocity import CVelocity
+from src.ecs.systems.s_animation import system_animation
 from src.ecs.systems.s_bullet_limit import system_bullet_limit
 from src.ecs.systems.s_collision_bullet_enemy import system_collision_bullet_enemy
 from src.ecs.systems.s_collision_player_enemy import system_collision_player_enemy
@@ -60,13 +61,18 @@ class GameEngine:
                 self.is_running = False
 
     def _update(self):
-        system_movement(self.ecs_world, self.delta_time)
         system_enemy_spawner(self.ecs_world, self.enemies, self.delta_time)
+        system_movement(self.ecs_world, self.delta_time)
+
         system_screen_bounce(self.ecs_world, self.screen)
-        system_player_limit(self.ecs_world, self.screen)
         system_bullet_limit(self.ecs_world, self.screen)
+        system_player_limit(self.ecs_world, self.screen)
+
         system_collision_player_enemy(self.ecs_world, self._player_entity, self.level_01)
         system_collision_bullet_enemy(self.ecs_world)
+        
+        system_animation(self.ecs_world, self.delta_time)
+        
         self.ecs_world._clear_dead_entities()
 
     def _draw(self):

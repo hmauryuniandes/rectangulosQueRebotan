@@ -12,17 +12,17 @@ def system_player_input(
 ) -> None:
     components = world.get_component(CInputCommand)
     for _, c_input in components:
-        if event.type == pygame.KEYDOWN and event.key == c_input.key:
+        # KEYBOARD
+        if event.type == pygame.KEYDOWN and event.key in c_input.keys:
             c_input.command_phase = CommandPhase.START
             do_action(c_input)
-        elif event.type == pygame.KEYUP and event.key == c_input.key:
+        elif event.type == pygame.KEYUP and event.key in c_input.keys:
             c_input.command_phase = CommandPhase.END
             do_action(c_input)
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT:
+        
+        # MOUSE
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT:
             c_input.command_phase = CommandPhase.START
             c_input.event_pos = event.pos
             do_action(c_input)
-        elif event.type == pygame.MOUSEBUTTONUP and event.button == pygame.BUTTON_LEFT:
-            c_input.event_pos = event.pos
-            c_input.command_phase = CommandPhase.END
-            do_action(c_input)
+       
