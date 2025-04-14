@@ -6,12 +6,16 @@ import random
 
 from src.ecs.components.c_animacion import CAnimation
 from src.ecs.components.c_enemy_spawner import CEnemySpawner
+from src.ecs.components.c_hunter_state import CHunterState
 from src.ecs.components.c_input_command import CInputCommand
+from src.ecs.components.c_player_state import CPlayerState
 from src.ecs.components.c_surface import CSurface
 from src.ecs.components.c_transform import CTransform
 from src.ecs.components.c_velocity import CVelocity
 from src.ecs.components.tags.c_tag_bullet import CTagBullet
 from src.ecs.components.tags.c_tag_enemy import CTagEnemy
+from src.ecs.components.tags.c_tag_explosion import CTagExplosion
+from src.ecs.components.tags.c_tag_hunter import CTagHunter
 from src.ecs.components.tags.c_tag_player import CTagPlayer
 
 
@@ -40,35 +44,44 @@ def create_player_rect(ecs_world: esper.World, player: dict, player_spawn: dict)
     vel = pygame.Vector2(0, 0)
     player_surface = pygame.image.load(player.get('image')).convert_alpha()
     size = player_surface.get_size()
-    size = (size[0] / player.get('animation').get('number_frames'), size[1])
+    size = (size[0] / player.get('animations').get('number_frames'), size[1])
     pos = pygame.Vector2(
         player_spawn.get('position').get('x') - size[0] / 2,
         player_spawn.get('position').get('y') - size[1] / 2
     )
     player_entity = create_sprint(ecs_world, pos, vel, player_surface)
     ecs_world.add_component(player_entity, CTagPlayer())
-    ecs_world.add_component(player_entity, CAnimation(player.get('animation')))
+    ecs_world.add_component(player_entity, CAnimation(player.get('animations')))
+    ecs_world.add_component(player_entity, CPlayerState())
     return player_entity
 
-def create_enemy_rect(ecs_world: esper.World, enemy_data: dict, pos: pygame.Vector2) -> None:
+def create_enemy_rect(ecs_world: esper.World, enemy_type: str, enemy_data: dict, pos: pygame.Vector2) -> None:
     enemy_surface = pygame.image.load(enemy_data.get('image')).convert_alpha()
+    if enemy_type == "Hunter":
+        vel = pygame.Vector2(0, 0)
+        enemy_entity = create_sprint(ecs_world, pos, vel, enemy_surface)
+        ecs_world.add_component(enemy_entity, CTagEnemy())
+        ecs_world.add_component(enemy_entity, CTagHunter())
+        ecs_world.add_component(enemy_entity, CHunterState())
+        ecs_world.add_component(enemy_entity, CAnimation(enemy_data.get('animations')))
+    else: 
+        # Random velocity between min and max
+        random_vel_x = random.uniform(float(enemy_data.get('velocity_min')), float(enemy_data.get('velocity_max')))
+        random_vel_y = random.uniform(float(enemy_data.get('velocity_min')), float(enemy_data.get('velocity_max')))
 
-    # Random velocity between min and max
-    random_vel_x = random.uniform(float(enemy_data.get('velocity_min')), float(enemy_data.get('velocity_max')))
-    random_vel_y = random.uniform(float(enemy_data.get('velocity_min')), float(enemy_data.get('velocity_max')))
+        # The angle of direction in which each rectangle moves is random.
+        invert_x = random.choice([True, False])
+        if invert_x:
+            random_vel_x *= -1
 
-    # The angle of direction in which each rectangle moves is random.
-    invert_x = random.choice([True, False])
-    if invert_x:
-        random_vel_x *= -1
+        invert_y = random.choice([True, False])
+        if invert_y:
+            random_vel_y *= -1
 
-    invert_y = random.choice([True, False])
-    if invert_y:
-        random_vel_y *= -1
+        vel = pygame.Vector2(random_vel_x,random_vel_y)
+        enemy_entity = create_sprint(ecs_world, pos, vel, enemy_surface)
+        ecs_world.add_component(enemy_entity, CTagEnemy())
 
-    vel = pygame.Vector2(random_vel_x,random_vel_y)
-    enemy_entity = create_sprint(ecs_world, pos, vel, enemy_surface)
-    ecs_world.add_component(enemy_entity, CTagEnemy())
 
 def create_enemy_spawner(ecs_world: esper.World, level_data: dict):
     spawner_entity = ecs_world.create_entity()
@@ -95,10 +108,7 @@ def create_bullet(ecs_world: esper.World,  player_entity: int, bullet: dict, eve
         pl_t: CTransform  = ecs_world.component_for_entity(player_entity, CTransform)
         pl_s: CSurface  = ecs_world.component_for_entity(player_entity, CSurface)
 
-        pl_rect = pl_s.area.copy()
-        pl_rect.topleft = pl_t.pos
-        
-        
+        pl_rect = pl_s.get_area_relative(pl_s.area, pl_t.pos)
         direction = (pygame.Vector2(event_pos) - pygame.Vector2(pl_rect.center)).normalize()
         vel = direction * bullet.get("velocity")
         bullet_surface = pygame.image.load(bullet.get('image')).convert_alpha()
@@ -107,4 +117,9 @@ def create_bullet(ecs_world: esper.World,  player_entity: int, bullet: dict, eve
         bullet_entity = create_sprint(ecs_world, pos, vel, bullet_surface)
         ecs_world.add_component(bullet_entity, CTagBullet())
 
-    
+def create_explosion(ecs_world: esper.World, pos: pygame.Vector2, explosion: dict) -> None:
+    surf = pygame.image.load(explosion.get("image")).convert_alpha()
+    vel = pygame.Vector2(0, 0)
+    explosion_entity = create_sprint(ecs_world, pos, vel, surf)
+    ecs_world.add_component(explosion_entity, CTagExplosion())
+    ecs_world.add_component(explosion_entity, CAnimation(explosion.get("animations")))

@@ -16,8 +16,8 @@ def system_player_limit(world: esper.World, screen: pygame.Surface):
     c_t_p: CTagPlayer
 
     for entity, (c_t, c_s, c_t_p) in components:
-        player_rect = c_s.area.copy()
-        player_rect.topleft = c_t.pos
-        if not screen_rect.contains(player_rect):
-            player_rect.clamp_ip(screen_rect)
-            c_t.pos.xy = player_rect.topleft
+        pl_rect = c_s.get_area_relative(c_s.area, c_t.pos)
+
+        if not screen_rect.contains(pl_rect):
+            pl_rect.clamp_ip(screen_rect)
+            c_t.pos.xy = pl_rect.topleft

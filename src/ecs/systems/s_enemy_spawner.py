@@ -21,7 +21,7 @@ def system_enemy_spawner(ecs_world: esper.World, enemies_data: dict, delta_time:
             if event.is_spawned == False and event.time <= c_s.current_time:
                 event.is_spawned = True
                 enemy_data = enemies_data[event.enemy_type]
-                create_enemy_rect(ecs_world, enemy_data, event.pos)
+                create_enemy_rect(ecs_world, event.enemy_type, enemy_data, event.pos)
    
 
         

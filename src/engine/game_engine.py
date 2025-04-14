@@ -13,16 +13,19 @@ from src.ecs.systems.s_bullet_limit import system_bullet_limit
 from src.ecs.systems.s_collision_bullet_enemy import system_collision_bullet_enemy
 from src.ecs.systems.s_collision_player_enemy import system_collision_player_enemy
 from src.ecs.systems.s_enemy_spawner import system_enemy_spawner
+from src.ecs.systems.s_explosion_state import system_explosion_state
+from src.ecs.systems.s_hunter_state import system_hunter_state
 from src.ecs.systems.s_movement import system_movement
 from src.ecs.systems.s_player_input import system_player_input
 from src.ecs.systems.s_player_limit import system_player_limit
+from src.ecs.systems.s_player_state import system_player_state
 from src.ecs.systems.s_rendering import system_rendering
 from src.ecs.systems.s_screen_bounce import system_screen_bounce
 
 class GameEngine:
     """La clase principal del motor de juego"""
     def __init__(self) -> None:
-        (self.window, self.enemies, self.level_01, self.player, self.bullet) = load_config()
+        (self.window, self.enemies, self.level_01, self.player, self.bullet, self.explosion) = load_config()
 
         pygame.init()
         pygame.display.set_caption(self.window.get('title').encode("latin_1").decode("utf_8"))
@@ -63,16 +66,15 @@ class GameEngine:
     def _update(self):
         system_enemy_spawner(self.ecs_world, self.enemies, self.delta_time)
         system_movement(self.ecs_world, self.delta_time)
-
+        system_player_state(self.ecs_world)
+        system_hunter_state(self.ecs_world, self._player_entity, self.enemies.get("Hunter"))
         system_screen_bounce(self.ecs_world, self.screen)
         system_bullet_limit(self.ecs_world, self.screen)
         system_player_limit(self.ecs_world, self.screen)
-
-        system_collision_player_enemy(self.ecs_world, self._player_entity, self.level_01)
-        system_collision_bullet_enemy(self.ecs_world)
-        
+        system_collision_player_enemy(self.ecs_world, self._player_entity, self.level_01, self.explosion)
+        system_collision_bullet_enemy(self.ecs_world, self.explosion)
         system_animation(self.ecs_world, self.delta_time)
-        
+        system_explosion_state(self.ecs_world)
         self.ecs_world._clear_dead_entities()
 
     def _draw(self):
