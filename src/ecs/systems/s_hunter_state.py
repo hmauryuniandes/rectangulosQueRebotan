@@ -21,10 +21,10 @@ def system_hunter_state(world: esper.World, player_entity: int, hunter: dict):
 def _do_idle_state(c_v: CVelocity, c_t: CTransform, c_a: CAnimation, c_pst: CHunterState, player_t: CTransform, hunter: dict):
     _set_animation(c_a, 1)
     
-    dist = player_t.pos.distance_to(c_t.pos)
-    dist_initial_pos = c_t.pos.distance_to(c_t.initial_pos)
+    dist_player_initial_pos = player_t.pos.distance_to(c_t.initial_pos)
+    dist_hunter_initial_pos = c_t.pos.distance_to(c_t.initial_pos)
 
-    if dist < hunter.get("distance_start_chase") or (dist > hunter.get("distance_start_return") and dist_initial_pos > 5):
+    if dist_player_initial_pos < hunter.get("distance_start_chase") or (dist_hunter_initial_pos > hunter.get("distance_start_return") and dist_player_initial_pos > 5):
         c_pst.state = HunterState.MOVE
     else: 
         c_v.vel = pygame.Vector2(0, 0)
@@ -34,15 +34,13 @@ def _do_idle_state(c_v: CVelocity, c_t: CTransform, c_a: CAnimation, c_pst: CHun
 def _do_move_state(c_v: CVelocity, c_t: CTransform, c_a: CAnimation, c_pst: CHunterState, player_t: CTransform, hunter: dict):
     _set_animation(c_a, 0)
     
-    dist = player_t.pos.distance_to(c_t.pos)
-    dist_initial_pos = c_t.pos.distance_to(c_t.initial_pos)
+    dist_player_initial_pos = player_t.pos.distance_to(c_t.initial_pos)
+    dist_hunter_initial_pos = c_t.pos.distance_to(c_t.initial_pos)
 
-    print(dist)
-    print(dist_initial_pos)
-    if dist >= hunter.get("distance_start_return") and dist_initial_pos <= 5:
+    if dist_player_initial_pos >= hunter.get("distance_start_return") and dist_hunter_initial_pos <= 5:
         c_pst.state = HunterState.IDLE
     else: 
-        if dist < hunter.get("distance_start_return"):
+        if dist_player_initial_pos < hunter.get("distance_start_return"):
             direction = (player_t.pos - c_t.pos).normalize()
             c_v.vel = direction * hunter.get("velocity_chase")
         else:
