@@ -1,0 +1,5 @@
+{
+    "image": "assets/img/bomb.png",
+    "sound": "assets/snd/laser.ogg",
+    "velocity": 100
+}

@@ -21,7 +21,7 @@ def system_player_input(
             do_action(c_input)
         
         # MOUSE
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == pygame.BUTTON_LEFT:
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button in c_input.buttons:
             c_input.command_phase = CommandPhase.START
             c_input.event_pos = event.pos
             do_action(c_input)

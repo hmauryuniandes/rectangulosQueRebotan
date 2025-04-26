@@ -12,10 +12,12 @@ from src.ecs.components.c_player_state import CPlayerState
 from src.ecs.components.c_surface import CSurface
 from src.ecs.components.c_transform import CTransform
 from src.ecs.components.c_velocity import CVelocity
+from src.ecs.components.tags.c_tag_bomb import CTagBomb
 from src.ecs.components.tags.c_tag_bullet import CTagBullet
 from src.ecs.components.tags.c_tag_enemy import CTagEnemy
 from src.ecs.components.tags.c_tag_explosion import CTagExplosion
 from src.ecs.components.tags.c_tag_hunter import CTagHunter
+from src.ecs.components.tags.c_tag_pause import CTagPuase
 from src.ecs.components.tags.c_tag_player import CTagPlayer
 from src.engine.service_locator import ServiceLocator
 
@@ -38,7 +40,10 @@ def create_sprint(ecs_world: esper.World,
     sprite_entity = ecs_world.create_entity()
     ecs_world.add_component(sprite_entity, CTransform(pos))
     ecs_world.add_component(sprite_entity, CVelocity(vel))
+    surf = pygame.transform.rotate(surf, -180)
     ecs_world.add_component(sprite_entity, CSurface.from_surface(surf))
+
+
     return sprite_entity
 
 def create_player_rect(ecs_world: esper.World, player: dict, player_spawn: dict) -> None:
@@ -94,15 +99,17 @@ def create_input_player(ecs_world: esper.World) -> None:
     input_right = ecs_world.create_entity()
     input_up = ecs_world.create_entity()
     input_down = ecs_world.create_entity()
-
     input_left_click = ecs_world.create_entity()
+    input_right_click = ecs_world.create_entity()
+    input_pause = ecs_world.create_entity()
     
-    ecs_world.add_component(input_left, CInputCommand("PLAYER_LEFT", [pygame.K_LEFT, pygame.K_a]))
-    ecs_world.add_component(input_right, CInputCommand("PLAYER_RIGHT", [pygame.K_RIGHT, pygame.K_d]))
-    ecs_world.add_component(input_up, CInputCommand("PLAYER_UP", [pygame.K_UP, pygame.K_w]))
-    ecs_world.add_component(input_down, CInputCommand("PLAYER_DOWN", [pygame.K_DOWN, pygame.K_s]))
-
-    ecs_world.add_component(input_left_click, CInputCommand("PLAYER_FIRE", [pygame.BUTTON_LEFT]))
+    ecs_world.add_component(input_left, CInputCommand("PLAYER_LEFT", [pygame.K_LEFT, pygame.K_a], []))
+    ecs_world.add_component(input_right, CInputCommand("PLAYER_RIGHT", [pygame.K_RIGHT, pygame.K_d], []))
+    ecs_world.add_component(input_up, CInputCommand("PLAYER_UP", [pygame.K_UP, pygame.K_w], []))
+    ecs_world.add_component(input_down, CInputCommand("PLAYER_DOWN", [pygame.K_DOWN, pygame.K_s], []))
+    ecs_world.add_component(input_left_click, CInputCommand("PLAYER_FIRE", [], [pygame.BUTTON_LEFT]))
+    ecs_world.add_component(input_right_click, CInputCommand("PLAYER_BOMB", [], [pygame.BUTTON_RIGHT]))
+    ecs_world.add_component(input_pause, CInputCommand("PAUSE", [pygame.K_p], []))
 
 def create_bullet(ecs_world: esper.World,  player_entity: int, bullet: dict, event_pos: pygame.Vector2, max_bullets: int) -> None:
     
@@ -120,6 +127,24 @@ def create_bullet(ecs_world: esper.World,  player_entity: int, bullet: dict, eve
         ServiceLocator.sounds_service.play(bullet.get("sound"))
         ecs_world.add_component(bullet_entity, CTagBullet())
 
+
+def create_bomb(ecs_world: esper.World,  player_entity: int, bomb: dict, event_pos: pygame.Vector2, bomb_charge: int) -> None:
+    
+    if bomb_charge == 100:
+        pl_t: CTransform  = ecs_world.component_for_entity(player_entity, CTransform)
+        pl_s: CSurface  = ecs_world.component_for_entity(player_entity, CSurface)
+
+        pl_rect = pl_s.get_area_relative(pl_s.area, pl_t.pos)
+        direction = (pygame.Vector2(event_pos) - pygame.Vector2(pl_rect.center)).normalize()
+        vel = direction * bomb.get("velocity")
+        bullet_surface = ServiceLocator.images_service.get(bomb.get('image'))
+        bullet_size = bullet_surface.get_size()
+        pos = pygame.Vector2(pl_rect.center[0] - (bullet_size[0] / 2), pl_rect.center[1] - (bullet_size[1] / 2))
+        bullet_entity = create_sprint(ecs_world, pos, vel, bullet_surface)
+        ServiceLocator.sounds_service.play(bomb.get("sound"))
+        ecs_world.add_component(bullet_entity, CTagBullet())
+        ecs_world.add_component(bullet_entity, CTagBomb())
+
 def create_explosion(ecs_world: esper.World, pos: pygame.Vector2, explosion: dict):
     surf = ServiceLocator.images_service.get(explosion.get("image"))
     vel = pygame.Vector2(0, 0)
@@ -128,3 +153,36 @@ def create_explosion(ecs_world: esper.World, pos: pygame.Vector2, explosion: dic
     ecs_world.add_component(explosion_entity, CAnimation(explosion.get("animations")))
     ServiceLocator.sounds_service.play(explosion.get("sound"))
     return explosion_entity
+
+def create_text_pause(ecs_world: esper.World, text: str, screen: pygame.Surface) -> None:
+    screen_rect = screen.get_rect()
+    vel = pygame.Vector2(0, 0)
+    surface = CSurface.from_text(text, (255, 255, 255))
+    surface.area.width
+    pos = pygame.Vector2(
+        screen_rect.centerx - surface.area.width / 2,
+        screen_rect.centery - surface.area.height / 2
+    )
+
+    entity = ecs_world.create_entity()
+    ecs_world.add_component(entity, surface)
+    ecs_world.add_component(entity, CTransform(pos))
+    ecs_world.add_component(entity, CVelocity(vel))
+    ecs_world.add_component(entity, CTagPuase())
+    return entity
+
+def create_text_title(ecs_world: esper.World, text: str, screen: pygame.Surface) -> None:
+    screen_rect = screen.get_rect()
+    surface = CSurface.from_text(text, (255, 255, 255))
+    vel = pygame.Vector2(0, 0)
+    surface.area.width
+    pos = pygame.Vector2(
+        screen_rect.centerx - surface.area.width / 2,
+        0
+    )
+    
+    entity = ecs_world.create_entity()
+    ecs_world.add_component(entity, surface)
+    ecs_world.add_component(entity, CTransform(pos))
+    ecs_world.add_component(entity, CVelocity(vel))
+    return entity

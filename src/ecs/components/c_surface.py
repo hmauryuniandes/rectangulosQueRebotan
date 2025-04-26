@@ -1,12 +1,15 @@
 
 import pygame
 
+from src.engine.service_locator import ServiceLocator
+
 
 class CSurface:
 
     def __init__(self, size: pygame.Vector2, color: pygame.Color) -> None:
         self.surf = pygame.Surface(size)
         self.surf.fill(color)
+        self.angle = 0
         self.area = self.surf.get_rect()
 
     @classmethod
@@ -14,6 +17,14 @@ class CSurface:
         c_surf = cls((0, 0), (0, 0, 0))
         c_surf.surf = surf
         c_surf.area = surf.get_rect()
+
+        return c_surf
+    
+    @classmethod
+    def from_text(cls, text: str, color: pygame.Color) -> 'CSurface':
+        c_surf = cls((0, 0), (0, 0, 0))
+        c_surf.surf = ServiceLocator.fonts_service.get('assets/fnt/PressStart2P.ttf').render(text, True, color)
+        c_surf.area = c_surf.surf.get_rect()
 
         return c_surf
     

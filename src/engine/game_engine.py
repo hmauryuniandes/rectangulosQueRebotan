@@ -1,11 +1,12 @@
 
 """Modulo del motor del juego"""
 
+import asyncio
 import esper
 import pygame
 
 from src.config.load_config import load_config
-from src.create.prefab_creator import create_bullet, create_enemy_spawner, create_input_player, create_player_rect
+from src.create.prefab_creator import create_bomb, create_bullet, create_enemy_spawner, create_input_player, create_player_rect, create_text_pause, create_text_title
 from src.ecs.components.c_input_command import CInputCommand, CommandPhase
 from src.ecs.components.c_velocity import CVelocity
 from src.ecs.systems.s_animation import system_animation
@@ -21,11 +22,13 @@ from src.ecs.systems.s_player_limit import system_player_limit
 from src.ecs.systems.s_player_state import system_player_state
 from src.ecs.systems.s_rendering import system_rendering
 from src.ecs.systems.s_screen_bounce import system_screen_bounce
+from src.ecs.systems.s_tele_bomb import system_tele_bomb
+from src.engine.service_locator import ServiceLocator
 
 class GameEngine:
     """La clase principal del motor de juego"""
     def __init__(self) -> None:
-        (self.window, self.enemies, self.level_01, self.player, self.bullet, self.explosion) = load_config()
+        (self.window, self.enemies, self.level_01, self.player, self.bullet, self.explosion, self.bomb) = load_config()
 
         pygame.init()
         pygame.display.set_caption(self.window.get('title').encode("latin_1").decode("utf_8"))
@@ -34,10 +37,11 @@ class GameEngine:
         self.is_running = False
         self.framerate = float(self.window.get('framerate'))
         self.delta_time = 0
-
+        self.is_paused = False
+        self.bomb_charge = 100
         self.ecs_world = esper.World()
 
-    def run(self) -> None:
+    async def run(self) -> None:
         self._create()
         self.is_running = True
         while self.is_running:
@@ -45,6 +49,7 @@ class GameEngine:
             self._process_events()
             self._update()
             self._draw()
+            await asyncio.sleep(0)
         self._clean()
 
     def _create(self):
@@ -52,6 +57,9 @@ class GameEngine:
         self._player_c_v = self.ecs_world.component_for_entity(self._player_entity, CVelocity)
         create_enemy_spawner(self.ecs_world, self.level_01.get('enemy_spawn_events'))
         create_input_player(self.ecs_world)
+        screen_rect = self.screen.get_rect()
+        create_text_title(self.ecs_world, self.window.get('title').encode("latin_1").decode("utf_8"), self.screen)
+        create_text_pause(self.ecs_world, "Pausado...", self.screen)
 
     def _calculate_time(self):
         self.clock.tick(self.framerate)
@@ -64,17 +72,20 @@ class GameEngine:
                 self.is_running = False
 
     def _update(self):
-        system_enemy_spawner(self.ecs_world, self.enemies, self.delta_time)
-        system_movement(self.ecs_world, self.delta_time)
-        system_player_state(self.ecs_world)
-        system_hunter_state(self.ecs_world, self._player_entity, self.enemies.get("Hunter"))
-        system_screen_bounce(self.ecs_world, self.screen)
-        system_bullet_limit(self.ecs_world, self.screen)
-        system_player_limit(self.ecs_world, self.screen)
-        system_collision_player_enemy(self.ecs_world, self._player_entity, self.level_01, self.explosion)
-        system_collision_bullet_enemy(self.ecs_world, self.explosion)
-        system_animation(self.ecs_world, self.delta_time)
-        system_explosion_state(self.ecs_world)
+        if not self.is_paused:
+            system_enemy_spawner(self.ecs_world, self.enemies, self.delta_time)
+            system_movement(self.ecs_world, self.delta_time)
+            system_player_state(self.ecs_world)
+            system_hunter_state(self.ecs_world, self._player_entity, self.enemies.get("Hunter"))
+            system_tele_bomb(self.ecs_world, self.screen, self.bomb)
+            system_screen_bounce(self.ecs_world, self.screen)
+            system_bullet_limit(self.ecs_world, self.screen)
+            system_player_limit(self.ecs_world, self.screen)
+            system_collision_player_enemy(self.ecs_world, self._player_entity, self.level_01, self.explosion)
+            system_collision_bullet_enemy(self.ecs_world, self.explosion)
+            system_animation(self.ecs_world, self.delta_time)
+            system_explosion_state(self.ecs_world)
+            
         self.ecs_world._clear_dead_entities()
 
     def _draw(self):
@@ -86,7 +97,7 @@ class GameEngine:
             )
         )
 
-        system_rendering(self.ecs_world, self.screen)
+        system_rendering(self.ecs_world, self.screen, self.is_paused)
 
         pygame.display.flip()
 
@@ -95,34 +106,47 @@ class GameEngine:
         pygame.quit()
 
     def _do_action(self, c_input: CInputCommand) -> None:
-        if c_input.name == "PLAYER_LEFT":
-            if c_input.command_phase == CommandPhase.START:
-                self._player_c_v.vel.x -= self.player.get('input_velocity')
-            elif c_input.command_phase == CommandPhase.END:
-                self._player_c_v.vel.x += self.player.get('input_velocity')
-        elif c_input.name == "PLAYER_RIGHT":
-            if c_input.command_phase == CommandPhase.START:
-                self._player_c_v.vel.x += self.player.get('input_velocity')
-            elif c_input.command_phase == CommandPhase.END:
-                self._player_c_v.vel.x -= self.player.get('input_velocity')
-        elif c_input.name == "PLAYER_UP":
-            if c_input.command_phase == CommandPhase.START:
-                self._player_c_v.vel.y -= self.player.get('input_velocity')
-            elif c_input.command_phase == CommandPhase.END:
-                self._player_c_v.vel.y += self.player.get('input_velocity')
-        elif c_input.name == "PLAYER_DOWN":
-            if c_input.command_phase == CommandPhase.START:
-                self._player_c_v.vel.y += self.player.get('input_velocity')
-            elif c_input.command_phase == CommandPhase.END:
-                self._player_c_v.vel.y -= self.player.get('input_velocity')
-        elif c_input.name == "PLAYER_FIRE":
-            if c_input.command_phase == CommandPhase.START:
-                create_bullet(
-                    self.ecs_world,
-                    self._player_entity,
-                    self.bullet,
-                    c_input.event_pos,
-                    self.level_01.get("player_spawn").get("max_bullets")
-                )
-            elif c_input.command_phase == CommandPhase.END:
-                pass
+
+        if not self.is_paused:
+            if c_input.name == "PLAYER_LEFT":
+                if c_input.command_phase == CommandPhase.START:
+                    self._player_c_v.vel.x -= self.player.get('input_velocity')
+                elif c_input.command_phase == CommandPhase.END:
+                    self._player_c_v.vel.x += self.player.get('input_velocity')
+            elif c_input.name == "PLAYER_RIGHT":
+                if c_input.command_phase == CommandPhase.START:
+                    self._player_c_v.vel.x += self.player.get('input_velocity')
+                elif c_input.command_phase == CommandPhase.END:
+                    self._player_c_v.vel.x -= self.player.get('input_velocity')
+            elif c_input.name == "PLAYER_UP":
+                if c_input.command_phase == CommandPhase.START:
+                    self._player_c_v.vel.y -= self.player.get('input_velocity')
+                elif c_input.command_phase == CommandPhase.END:
+                    self._player_c_v.vel.y += self.player.get('input_velocity')
+            elif c_input.name == "PLAYER_DOWN":
+                if c_input.command_phase == CommandPhase.START:
+                    self._player_c_v.vel.y += self.player.get('input_velocity')
+                elif c_input.command_phase == CommandPhase.END:
+                    self._player_c_v.vel.y -= self.player.get('input_velocity')
+            elif c_input.name == "PLAYER_FIRE":
+                if c_input.command_phase == CommandPhase.START:
+                    create_bullet(
+                        self.ecs_world,
+                        self._player_entity,
+                        self.bullet,
+                        c_input.event_pos,
+                        self.level_01.get("player_spawn").get("max_bullets")
+                    )
+            elif c_input.name == "PLAYER_BOMB":
+                if c_input.command_phase == CommandPhase.START:
+                    create_bomb(
+                        self.ecs_world,
+                        self._player_entity,
+                        self.bomb,
+                        c_input.event_pos,
+                        self.bomb_charge
+                    )
+                    # self.bomb_charge = 0
+
+        if c_input.name == "PAUSE" and c_input.command_phase == CommandPhase.END:
+            self.is_paused = not self.is_paused
