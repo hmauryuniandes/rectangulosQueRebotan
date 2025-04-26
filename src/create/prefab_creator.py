@@ -40,7 +40,7 @@ def create_sprint(ecs_world: esper.World,
     sprite_entity = ecs_world.create_entity()
     ecs_world.add_component(sprite_entity, CTransform(pos))
     ecs_world.add_component(sprite_entity, CVelocity(vel))
-    surf = pygame.transform.rotate(surf, -180)
+    # surf = pygame.transform.rotate(surf, -180)
     ecs_world.add_component(sprite_entity, CSurface.from_surface(surf))
 
 
