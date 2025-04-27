@@ -40,7 +40,7 @@ def create_sprint(ecs_world: esper.World,
     sprite_entity = ecs_world.create_entity()
     ecs_world.add_component(sprite_entity, CTransform(pos))
     ecs_world.add_component(sprite_entity, CVelocity(vel))
-    # surf = pygame.transform.rotate(surf, -180)
+    surf = pygame.transform.rotate(surf, 0)
     ecs_world.add_component(sprite_entity, CSurface.from_surface(surf))
 
 
@@ -128,9 +128,9 @@ def create_bullet(ecs_world: esper.World,  player_entity: int, bullet: dict, eve
         ecs_world.add_component(bullet_entity, CTagBullet())
 
 
-def create_bomb(ecs_world: esper.World,  player_entity: int, bomb: dict, event_pos: pygame.Vector2, bomb_charge: int) -> None:
-    
-    if bomb_charge == 100:
+def create_bomb(ecs_world: esper.World,  player_entity: int, bomb: dict, event_pos: pygame.Vector2, bomb_charge: int) -> int:
+    enemies = ecs_world.get_components(CTransform, CTagEnemy)
+    if bomb_charge == 100 and len(enemies) > 0:
         pl_t: CTransform  = ecs_world.component_for_entity(player_entity, CTransform)
         pl_s: CSurface  = ecs_world.component_for_entity(player_entity, CSurface)
 
@@ -144,6 +144,9 @@ def create_bomb(ecs_world: esper.World,  player_entity: int, bomb: dict, event_p
         ServiceLocator.sounds_service.play(bomb.get("sound"))
         ecs_world.add_component(bullet_entity, CTagBullet())
         ecs_world.add_component(bullet_entity, CTagBomb())
+        return 0
+    else:
+        return bomb_charge
 
 def create_explosion(ecs_world: esper.World, pos: pygame.Vector2, explosion: dict):
     surf = ServiceLocator.images_service.get(explosion.get("image"))
@@ -179,6 +182,22 @@ def create_text_title(ecs_world: esper.World, text: str, screen: pygame.Surface)
     pos = pygame.Vector2(
         screen_rect.centerx - surface.area.width / 2,
         0
+    )
+    
+    entity = ecs_world.create_entity()
+    ecs_world.add_component(entity, surface)
+    ecs_world.add_component(entity, CTransform(pos))
+    ecs_world.add_component(entity, CVelocity(vel))
+    return entity
+
+def create_text_bomb(ecs_world: esper.World, text: str, screen: pygame.Surface) -> None:
+    screen_rect = screen.get_rect()
+    surface = CSurface.from_text(text, (255, 255, 255))
+    vel = pygame.Vector2(0, 0)
+    surface.area.width
+    pos = pygame.Vector2(
+        0,
+        screen_rect.height - 20,
     )
     
     entity = ecs_world.create_entity()

@@ -6,7 +6,7 @@ import esper
 import pygame
 
 from src.config.load_config import load_config
-from src.create.prefab_creator import create_bomb, create_bullet, create_enemy_spawner, create_input_player, create_player_rect, create_text_pause, create_text_title
+from src.create.prefab_creator import create_bomb, create_bullet, create_enemy_spawner, create_input_player, create_player_rect, create_text_bomb, create_text_pause, create_text_title
 from src.ecs.components.c_input_command import CInputCommand, CommandPhase
 from src.ecs.components.c_velocity import CVelocity
 from src.ecs.systems.s_animation import system_animation
@@ -60,10 +60,15 @@ class GameEngine:
         screen_rect = self.screen.get_rect()
         create_text_title(self.ecs_world, self.window.get('title').encode("latin_1").decode("utf_8"), self.screen)
         create_text_pause(self.ecs_world, "Pausado...", self.screen)
+        create_text_bomb(self.ecs_world, "Bomba: " + str(self.bomb_charge) + "%", self.screen)
 
     def _calculate_time(self):
         self.clock.tick(self.framerate)
         self.delta_time = self.clock.get_time() / 1000.0
+        self.bomb_charge += self.delta_time * 50
+        if self.bomb_charge > 100:
+            self.bomb_charge = 100
+        print(f"bomb_charge: {self.bomb_charge}")
 
     def _process_events(self):
         for event in pygame.event.get():
@@ -139,14 +144,13 @@ class GameEngine:
                     )
             elif c_input.name == "PLAYER_BOMB":
                 if c_input.command_phase == CommandPhase.START:
-                    create_bomb(
+                    self.bomb_charge = create_bomb(
                         self.ecs_world,
                         self._player_entity,
                         self.bomb,
                         c_input.event_pos,
                         self.bomb_charge
                     )
-                    # self.bomb_charge = 0
 
         if c_input.name == "PAUSE" and c_input.command_phase == CommandPhase.END:
             self.is_paused = not self.is_paused

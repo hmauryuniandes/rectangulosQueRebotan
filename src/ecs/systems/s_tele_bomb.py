@@ -21,15 +21,12 @@ def system_tele_bomb(world: esper.World, screen: pygame.Surface, bomb_info: dict
 
     for entity, (c_t, c_s, c_v, c_t_p) in components:
         enemy_id = get_closest_enemy(world, c_t.pos)
-        enemy_t  = world.component_for_entity(enemy_id, CTransform)
-        direction = (enemy_t.pos - c_t.pos).normalize()
-        c_v.vel = direction * bomb_info.get("velocity") 
-
-        new_angle = math.degrees(math.atan2(c_v.vel.y, c_v.vel.x))
-        print(f"Angle: {c_s.angle} new_angle: {new_angle}")
-        # c_s.surf = pygame.transform.rotate(c_s.surf, c_s.angle)
-
-        
+        if enemy_id is not None:
+            enemy_t  = world.component_for_entity(enemy_id, CTransform)
+            direction = (enemy_t.pos - c_t.pos).normalize()
+            c_v.vel = direction * bomb_info.get("velocity") 
+            new_angle = math.degrees(math.atan2(c_v.vel.y, c_v.vel.x))
+            c_s.surf = pygame.transform.rotate(c_s.original_surf.copy(), new_angle * -1)
 
 def get_closest_enemy(world: esper.World, bomb_pos: pygame.Vector2):
     enemies = world.get_components(CTransform, CTagEnemy)
