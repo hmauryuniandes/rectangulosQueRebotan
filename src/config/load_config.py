@@ -18,10 +18,14 @@ def load_config():
     
     with open('assets/cfg/explosion.json', 'r') as file:
         explosion = json.load(file)
+    
+    with open('assets/cfg/interface.json', 'r') as file:
+        interface = json.load(file)
 
     with open('assets/cfg/bomb.json', 'r') as file:
         bomb = json.load(file)
 
 
-    return (window, enemies, level_01, player, bullet, explosion, bomb)
+
+    return (window, enemies, level_01, player, bullet, explosion, interface, bomb)
 

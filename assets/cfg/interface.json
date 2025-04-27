@@ -1,0 +1,27 @@
+{
+    "font": "assets/fnt/PressStart2P.ttf",
+    "title": {
+        "text": "Interstellar Dread",
+        "size": 16,
+        "color": [255, 255, 0]
+    },
+    "pause": {
+        "text": "Pausado",
+        "size": 16,
+        "color": [255, 255, 255]
+    },
+    "help": {
+        "text": "Bomba teledirigida: clic derecho para lanzar. Recarga tras cada uso. Persigue al objetivo más cercano.",
+        "size": 8,
+        "color": [255, 255, 255],
+        "x": 20,
+        "y": 20
+    },
+    "bomb_text": {
+        "text": "Bomba teledirigida",
+        "size": 10,
+        "color": [255, 0, 0],
+        "x": 20,
+        "y": 20
+    }
+}

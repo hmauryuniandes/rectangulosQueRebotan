@@ -6,10 +6,11 @@ import esper
 import pygame
 
 from src.config.load_config import load_config
-from src.create.prefab_creator import create_bomb, create_bullet, create_enemy_spawner, create_input_player, create_player_rect, create_text_bomb, create_text_pause, create_text_title
+from src.create.prefab_creator import create_bomb, create_bullet, create_enemy_spawner, create_input_player, create_player_rect, create_text_bomb, create_text_help, create_text_pause, create_text_title
 from src.ecs.components.c_input_command import CInputCommand, CommandPhase
 from src.ecs.components.c_velocity import CVelocity
 from src.ecs.systems.s_animation import system_animation
+from src.ecs.systems.s_bomb_text import system_bomb_text
 from src.ecs.systems.s_bullet_limit import system_bullet_limit
 from src.ecs.systems.s_collision_bullet_enemy import system_collision_bullet_enemy
 from src.ecs.systems.s_collision_player_enemy import system_collision_player_enemy
@@ -28,7 +29,7 @@ from src.engine.service_locator import ServiceLocator
 class GameEngine:
     """La clase principal del motor de juego"""
     def __init__(self) -> None:
-        (self.window, self.enemies, self.level_01, self.player, self.bullet, self.explosion, self.bomb) = load_config()
+        (self.window, self.enemies, self.level_01, self.player, self.bullet, self.explosion, self.interface, self.bomb) = load_config()
 
         pygame.init()
         pygame.display.set_caption(self.window.get('title').encode("latin_1").decode("utf_8"))
@@ -58,9 +59,10 @@ class GameEngine:
         create_enemy_spawner(self.ecs_world, self.level_01.get('enemy_spawn_events'))
         create_input_player(self.ecs_world)
         screen_rect = self.screen.get_rect()
-        create_text_title(self.ecs_world, self.window.get('title').encode("latin_1").decode("utf_8"), self.screen)
-        create_text_pause(self.ecs_world, "Pausado...", self.screen)
-        create_text_bomb(self.ecs_world, "Bomba: " + str(self.bomb_charge) + "%", self.screen)
+        create_text_title(self.ecs_world, self.interface.get("font"), self.interface.get("title"))
+        create_text_help(self.ecs_world, self.interface.get("font"), self.interface.get("help"))
+        create_text_pause(self.ecs_world, self.interface.get("font"), self.interface.get("pause"), self.screen)
+        create_text_bomb(self.ecs_world, self.interface.get("font"), self.interface.get("bomb_text"), self.screen)
 
     def _calculate_time(self):
         self.clock.tick(self.framerate)
@@ -83,6 +85,7 @@ class GameEngine:
             system_player_state(self.ecs_world)
             system_hunter_state(self.ecs_world, self._player_entity, self.enemies.get("Hunter"))
             system_tele_bomb(self.ecs_world, self.screen, self.bomb)
+            system_bomb_text(self.ecs_world, self.interface.get("font"), self.interface.get("bomb_text"), self.bomb_charge)
             system_screen_bounce(self.ecs_world, self.screen)
             system_bullet_limit(self.ecs_world, self.screen)
             system_player_limit(self.ecs_world, self.screen)

@@ -22,9 +22,10 @@ class CSurface:
         return c_surf
     
     @classmethod
-    def from_text(cls, text: str, color: pygame.Color) -> 'CSurface':
+    def from_text(cls, font_path: str, text: str, color: pygame.Color, size: int) -> 'CSurface':
         c_surf = cls((0, 0), (0, 0, 0))
-        c_surf.surf = ServiceLocator.fonts_service.get('assets/fnt/PressStart2P.ttf').render(text, True, color)
+        font = ServiceLocator.fonts_service.get(font_path, size)
+        c_surf.surf = font.render(text, True, color)
         c_surf.area = c_surf.surf.get_rect()
         c_surf.original_surf = c_surf.surf.copy()
         return c_surf
