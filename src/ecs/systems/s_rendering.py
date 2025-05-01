@@ -16,4 +16,5 @@ def system_rendering(world: esper.World, screen: pygame.Surface, is_paused: bool
     for entity, (c_t, c_s) in components:
         if (is_paused and world.has_component(entity, CTagPuase)) \
             or not is_paused and not world.has_component(entity, CTagPuase):
-            screen.blit(c_s.surf, c_t.pos, area=c_s.area)
+            rotated_surface = pygame.transform.rotate(c_s.surf, c_t.rotation)
+            screen.blit(rotated_surface, c_t.pos, area=c_s.area)

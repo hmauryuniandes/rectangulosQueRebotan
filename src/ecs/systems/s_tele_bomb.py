@@ -26,7 +26,7 @@ def system_tele_bomb(world: esper.World, screen: pygame.Surface, bomb_info: dict
             direction = (enemy_t.pos - c_t.pos).normalize()
             c_v.vel = direction * bomb_info.get("velocity") 
             new_angle = math.degrees(math.atan2(c_v.vel.y, c_v.vel.x))
-            c_s.surf = pygame.transform.rotate(c_s.original_surf.copy(), new_angle * -1)
+            c_t.rotation = new_angle * -1
 
 def get_closest_enemy(world: esper.World, bomb_pos: pygame.Vector2):
     enemies = world.get_components(CTransform, CTagEnemy)
