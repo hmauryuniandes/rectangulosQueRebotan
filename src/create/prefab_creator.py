@@ -112,6 +112,14 @@ def create_input_player(ecs_world: esper.World) -> None:
     ecs_world.add_component(input_right_click, CInputCommand("PLAYER_BOMB", [], [pygame.BUTTON_RIGHT]))
     ecs_world.add_component(input_pause, CInputCommand("PAUSE", [pygame.K_p], []))
 
+def create_input_menu(ecs_world: esper.World) -> None:
+    input_start = ecs_world.create_entity()
+    ecs_world.add_component(input_start, CInputCommand("START_GAME", [pygame.K_z], []))
+
+def create_input_quit_to_menu(ecs_world: esper.World) -> None:
+    input_start = ecs_world.create_entity()
+    ecs_world.add_component(input_start, CInputCommand("QUIT_TO_MENU", [pygame.K_ESCAPE], []))
+   
 def create_bullet(ecs_world: esper.World,  player_entity: int, bullet: dict, event_pos: pygame.Vector2, max_bullets: int) -> None:
     
     if len(ecs_world.get_components(CTagBullet)) < max_bullets:
@@ -158,61 +166,34 @@ def create_explosion(ecs_world: esper.World, pos: pygame.Vector2, explosion: dic
     ServiceLocator.sounds_service.play(explosion.get("sound"))
     return explosion_entity
 
+def create_text(ecs_world: esper.World, font_path: str, text: dict, pos: pygame.Vector2) -> None:
+    surface = CSurface.from_text(font_path, text.get("text"), text.get("color"), text.get("size"))
+    vel = pygame.Vector2(0, 0)
+    entity = ecs_world.create_entity()
+    ecs_world.add_component(entity, surface)
+    ecs_world.add_component(entity, CTransform(pos))
+    ecs_world.add_component(entity, CVelocity(vel))
+    return entity
+
 def create_text_pause(ecs_world: esper.World, font_path: str, text: dict, screen: pygame.Surface) -> None:
     screen_rect = screen.get_rect()
-    vel = pygame.Vector2(0, 0)
     surface = CSurface.from_text(font_path, text.get("text"), text.get("color"), text.get("size"))
     pos = pygame.Vector2(
         screen_rect.centerx - surface.area.width / 2,
         screen_rect.centery - surface.area.height / 2
     )
-
-    entity = ecs_world.create_entity()
-    ecs_world.add_component(entity, surface)
-    ecs_world.add_component(entity, CTransform(pos))
-    ecs_world.add_component(entity, CVelocity(vel))
+    entity = create_text(ecs_world, font_path, text, pos)
     ecs_world.add_component(entity, CTagPuase())
     return entity
 
-def create_text_title(ecs_world: esper.World, font_path: str, text: dict) -> None:
-    surface = CSurface.from_text(font_path, text.get("text"), text.get("color"), text.get("size"))
-    vel = pygame.Vector2(0, 0)
-    pos = pygame.Vector2(
-        20,
-        20
-    )
-    
-    entity = ecs_world.create_entity()
-    ecs_world.add_component(entity, surface)
-    ecs_world.add_component(entity, CTransform(pos))
-    ecs_world.add_component(entity, CVelocity(vel))
-    return entity
 
-def create_text_help(ecs_world: esper.World, font_path: str, text: dict) -> None:
-    surface = CSurface.from_text(font_path, text.get("text"), text.get("color"), text.get("size"))
-    vel = pygame.Vector2(0, 0)
-    pos = pygame.Vector2(
-        20,
-        40
-    )
-    entity = ecs_world.create_entity()
-    ecs_world.add_component(entity, surface)
-    ecs_world.add_component(entity, CTransform(pos))
-    ecs_world.add_component(entity, CVelocity(vel))
-    return entity
 
 def create_text_bomb(ecs_world: esper.World, font_path: str, text: dict, screen: pygame.Surface) -> None:
     screen_rect = screen.get_rect()
-    surface = CSurface.from_text(font_path, text.get("text"), text.get("color"), text.get("size"))
-    vel = pygame.Vector2(0, 0)
     pos = pygame.Vector2(
         20,
         screen_rect.height - 20,
     )
-    
-    entity = ecs_world.create_entity()
-    ecs_world.add_component(entity, surface)
-    ecs_world.add_component(entity, CTransform(pos))
-    ecs_world.add_component(entity, CVelocity(vel))
+    entity = create_text(ecs_world, font_path, text, pos)
     ecs_world.add_component(entity, CTagBombText())
     return entity

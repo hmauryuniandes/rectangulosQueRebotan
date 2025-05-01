@@ -5,8 +5,23 @@
         "size": 16,
         "color": [255, 255, 0]
     },
+    "start": {
+        "text": "Presione Z para empezar",
+        "size": 14,
+        "color": [255, 255, 255]
+    },
+    "game_over": {
+        "text": "GAME OVER - presione ESC para reiniciar",
+        "size": 16,
+        "color": [255, 255, 255]
+    },
+    "win": {
+        "text": "WIN - presione ESC para reiniciar",
+        "size": 16,
+        "color": [255, 255, 255]
+    },
     "pause": {
-        "text": "Pausado",
+        "text": "PAUSED",
         "size": 16,
         "color": [255, 255, 255]
     },
